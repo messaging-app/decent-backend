@@ -32,7 +32,6 @@ pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, mut 
         client_msg(&id, msg, &clients).await;
     }
 
-    clients.write().await.remove(&id);
     println!("{} disconnected", id);
 }
 
