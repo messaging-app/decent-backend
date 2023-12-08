@@ -1,6 +1,6 @@
+use crate::{Clients, Result};
 use serde::{Deserialize, Serialize};
 use warp::{http::StatusCode, reply::json, Reply};
-use crate::{Clients, Result};
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
@@ -17,21 +17,23 @@ pub struct UsersResponse {
 #[derive(Deserialize, Debug)]
 pub struct Event {
     user_id: Option<String>,
-    message: String
+    message: String,
 }
 
 pub async fn users_handler(clients: Clients) -> Result<impl Reply> {
-    let users = clients.read()
+    let users = clients
+        .read()
         .await
         .iter()
-        .map(|(uuid , client)| {
+        .map(|(uuid, client)| {
             let c = client.clone();
             UsersResponse {
                 user_name: c.user_name,
                 user_id: c.user_id.unwrap(),
                 user_uuid: uuid.clone(),
             }
-        }).collect::<Vec<UsersResponse>>();
+        })
+        .collect::<Vec<UsersResponse>>();
     Ok(json(&users))
 }
 
