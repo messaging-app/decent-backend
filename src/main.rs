@@ -8,6 +8,7 @@ use warp::{Filter, Rejection};
 
 mod handler;
 mod ws;
+
 type Result<T> = std::result::Result<T, Rejection>;
 
 #[derive(Debug, Clone)]
@@ -18,6 +19,7 @@ pub struct Client {
 }
 
 type Clients = Arc<RwLock<HashMap<String, Client>>>;
+
 #[tokio::main]
 async fn main() {
     let clients = generate_clients();
@@ -27,8 +29,15 @@ async fn main() {
         .and(with_clients(clients.clone()))
         .and_then(handler::users_handler);
 
+    let ws_route = warp::path("ws")
+        .and(warp::ws())
+        .and(warp::path::param())
+        .and(with_clients(clients.clone()))
+        .and_then(handler::ws_handler);
+
     let routes = health_route
         .or(user_route)
+        .or(ws_route)
         .with(warp::cors().allow_any_origin());
     warp::serve(routes).run(([127, 0, 0, 1], 8000)).await;
 }
@@ -37,9 +46,8 @@ fn generate_clients() -> Clients {
     let names = vec!["Adrian", "Alice", "Ben", "Bob", "Kevin"];
     let mut users: HashMap<String, Client> = HashMap::new();
     for (i, name) in names.iter().enumerate() {
-        let uuid = Uuid::new_v4().as_simple().to_string();
         users.insert(
-            uuid,
+            Uuid::new_v4().as_simple().to_string(),
             Client {
                 user_id: Some(i),
                 sender: None,
@@ -50,6 +58,6 @@ fn generate_clients() -> Clients {
     Arc::new(RwLock::new(users))
 }
 
-fn with_clients(clients: Clients) -> impl Filter<Extract = (Clients,), Error = Infallible> + Clone {
+fn with_clients(clients: Clients) -> impl Filter<Extract=(Clients, ), Error=Infallible> + Clone {
     warp::any().map(move || clients.clone())
 }
