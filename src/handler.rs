@@ -15,12 +15,6 @@ pub struct UsersResponse {
     pub user_uuid: String,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct Event {
-    user_id: Option<String>,
-    message: String,
-}
-
 pub async fn users_handler(clients: Clients) -> Result<impl Reply> {
     let users = clients
         .read()

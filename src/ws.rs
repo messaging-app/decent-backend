@@ -52,7 +52,7 @@ async fn client_msg(id: &str, msg: Message, clients: &Clients) {
         .read()
         .await
         .iter()
-        .for_each(|(uuid, client)| forward_msg(message.clone(), uuid, id.clone(), client.clone()));
+        .for_each(|(uuid, client)| forward_msg(message, uuid, id, client.clone()));
 }
 
 fn forward_msg(msg: &str, uuid: &str, sender_id: &str, client: Client) {
