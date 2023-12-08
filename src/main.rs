@@ -39,6 +39,7 @@ async fn main() {
         .or(user_route)
         .or(ws_route)
         .with(warp::cors().allow_any_origin());
+
     warp::serve(routes).run(([127, 0, 0, 1], 8000)).await;
 }
 
@@ -58,6 +59,6 @@ fn generate_clients() -> Clients {
     Arc::new(RwLock::new(users))
 }
 
-fn with_clients(clients: Clients) -> impl Filter<Extract=(Clients, ), Error=Infallible> + Clone {
+fn with_clients(clients: Clients) -> impl Filter<Extract = (Clients,), Error = Infallible> + Clone {
     warp::any().map(move || clients.clone())
 }

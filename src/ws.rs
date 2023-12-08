@@ -1,10 +1,9 @@
-use crate::{Client, Clients};
 use futures::{FutureExt, StreamExt};
-use serde::Deserialize;
-use serde_json::from_str;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
+
+use crate::{Client, Clients};
 
 pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, mut client: Client) {
     let (client_ws_sender, mut client_ws_rcv) = ws.split();
@@ -38,26 +37,33 @@ pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, mut 
 }
 
 async fn client_msg(id: &str, msg: Message, clients: &Clients) {
-    println!("received message from {}: {:?}", id, msg);
+    if !msg.is_text() {
+        eprintln!("Message not text");
+        return;
+    }
+
+    println!("received message from {}", id);
     let message = match msg.to_str() {
         Ok(v) => v,
         Err(_) => return,
     };
 
-    if message == "ping" || message == "ping\n" {
+    clients
+        .read()
+        .await
+        .iter()
+        .for_each(|(uuid, client)| forward_msg(message.clone(), uuid, id.clone(), client.clone()));
+}
+
+fn forward_msg(msg: &str, uuid: &str, sender_id: &str, client: Client) {
+    if !msg.contains(uuid) {
+        println!("Cannot forward message");
         return;
     }
-
-    // let topics_req: TopicsRequest = match from_str(&message) {
-    //     Ok(v) => v,
-    //     Err(e) => {
-    //         eprintln!("error while parsing message to topics request: {}", e);
-    //         return;
-    //     }
-    // };
-
-    // let mut locked = clients.write().await;
-    // if let Some(v) = locked.get_mut(id) {
-    //     v.topics = topics_req.topics;
-    // }
+    println!("Forward message to: {}", uuid);
+    if let Some(s) = client.sender {
+        let _ = s.send(Ok(Message::text(msg.replace(uuid, sender_id))));
+    } else {
+        eprintln!("Receiver offline");
+    }
 }

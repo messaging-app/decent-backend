@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use warp::{http::StatusCode, Reply, reply::json};
+use warp::{http::StatusCode, reply::json, Reply};
 
-use crate::{Clients, Result, ws};
+use crate::{ws, Clients, Result};
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
@@ -46,6 +46,6 @@ pub async fn ws_handler(ws: warp::ws::Ws, id: String, clients: Clients) -> Resul
     let client = clients.read().await.get(&id).cloned();
     match client {
         Some(c) => Ok(ws.on_upgrade(move |socket| ws::client_connection(socket, id, clients, c))),
-        None => Err(warp::reject::not_found())
+        None => Err(warp::reject::not_found()),
     }
 }
